@@ -93,6 +93,11 @@ static HDC     g_cacheDC     = NULL;
 static HBITMAP g_cacheBmp    = NULL;
 static HBITMAP g_cacheOldBmp = NULL;
 
+/* OSD 当前 DPI 缩放后的尺寸 */
+static int g_osdW   = OSD_WIDTH;
+static int g_osdH   = OSD_HEIGHT;
+static int g_osdGap = OSD_BOTTOM_GAP;
+
 #define WM_TRAYICON (WM_USER + 1)
 #define IDM_EXIT        1001
 #define IDM_AUTOSTART   1002
@@ -256,6 +261,47 @@ static void MakeRoundRect(GpPath *path, float x, float y, float w, float h, floa
     GdipClosePathFigure(path);
 }
 
+/* ── DPI 感知 ── */
+static void EnableDpiAwareness(void) {
+    /* 优先 Per-Monitor V2 (Win10 1703+) */
+    typedef BOOL (WINAPI *PFN_SetDpiCtx)(HANDLE);
+    HMODULE hUser = GetModuleHandleW(L"user32.dll");
+    if (hUser) {
+        PFN_SetDpiCtx fn = (PFN_SetDpiCtx)GetProcAddress(hUser, "SetProcessDpiAwarenessContext");
+        if (fn && fn((HANDLE)(LONG_PTR)-4)) return;
+    }
+    /* 回退 Per-Monitor V1 (Win8.1+) */
+    HMODULE hShcore = LoadLibraryW(L"shcore.dll");
+    if (hShcore) {
+        typedef HRESULT (WINAPI *PFN_SetDpi)(int);
+        PFN_SetDpi fn = (PFN_SetDpi)GetProcAddress(hShcore, "SetProcessDpiAwareness");
+        if (fn) fn(2); /* PROCESS_PER_MONITOR_DPI_AWARE */
+        FreeLibrary(hShcore);
+    }
+}
+
+static UINT GetMonitorDpi(HMONITOR hMon) {
+    typedef HRESULT (WINAPI *PFN_GetDpiMon)(HMONITOR, int, UINT*, UINT*);
+    static PFN_GetDpiMon pfn = NULL;
+    static BOOL init = FALSE;
+    if (!init) {
+        HMODULE h = LoadLibraryW(L"shcore.dll");
+        if (h) pfn = (PFN_GetDpiMon)GetProcAddress(h, "GetDpiForMonitor");
+        init = TRUE;
+    }
+    if (pfn && hMon) {
+        UINT dpiX = 96, dpiY = 96;
+        if (SUCCEEDED(pfn(hMon, 0, &dpiX, &dpiY))) return dpiX;
+    }
+    HDC hdc = GetDC(NULL);
+    UINT dpi = (UINT)GetDeviceCaps(hdc, LOGPIXELSX);
+    ReleaseDC(NULL, hdc);
+    return dpi;
+}
+
+static inline int Dpi(int base, UINT dpi) { return MulDiv(base, (int)dpi, 96); }
+static inline float DpiF(float base, UINT dpi) { return base * dpi / 96.0f; }
+
 /* ── 实心填充托盘图标 ── */
 static HICON CreateTrayIcon(void) {
     int sz = 32;
@@ -365,7 +411,7 @@ static void CompositeOSD(void) {
     if (!g_cacheDC) return;
 
     POINT ptSrc = {0, 0};
-    SIZE  szWnd = {OSD_WIDTH, OSD_HEIGHT};
+    SIZE  szWnd = {g_osdW, g_osdH};
     BLENDFUNCTION blend = {0};
     blend.BlendOp             = AC_SRC_OVER;
     blend.SourceConstantAlpha = g_alpha;
@@ -378,8 +424,8 @@ static void CompositeOSD(void) {
     GetMonitorInfoW(hMon, &mi);
     RECT rc = mi.rcWork;
     POINT ptDst = {
-        rc.left + ((rc.right - rc.left) - OSD_WIDTH) / 2,
-        rc.bottom - OSD_HEIGHT - OSD_BOTTOM_GAP
+        rc.left + ((rc.right - rc.left) - g_osdW) / 2,
+        rc.bottom - g_osdH - g_osdGap
     };
 
     HDC hdcScreen = GetDC(NULL);
@@ -390,7 +436,13 @@ static void CompositeOSD(void) {
 
 /* 完整绘制 OSD 内容到缓存，然后合成到屏幕 */
 static void RenderOSD(void) {
-    int w = OSD_WIDTH, h = OSD_HEIGHT;
+    /* 获取目标显示器 DPI 并缩放尺寸 */
+    HWND hwFg = GetForegroundWindow();
+    HMONITOR hMon = MonitorFromWindow(hwFg ? hwFg : g_hwndOSD, MONITOR_DEFAULTTOPRIMARY);
+    UINT dpi = GetMonitorDpi(hMon);
+    int w = Dpi(OSD_WIDTH, dpi), h = Dpi(OSD_HEIGHT, dpi);
+    g_osdW = w; g_osdH = h;
+    g_osdGap = Dpi(OSD_BOTTOM_GAP, dpi);
 
     g_darkMode = GetEffectiveDarkMode();
     DWORD clrBG    = g_darkMode ? DARK_BG         : LITE_BG;
@@ -423,7 +475,7 @@ static void RenderOSD(void) {
     /* 背景 */
     GpPath *bgPath = NULL;
     GdipCreatePath(FillModeAlternate, &bgPath);
-    MakeRoundRect(bgPath, 0.5f, 0.5f, (float)w - 1, (float)h - 1, OSD_CORNER);
+    MakeRoundRect(bgPath, 0.5f, 0.5f, (float)w - 1, (float)h - 1, DpiF(OSD_CORNER, dpi));
 
     GpSolidFill *bgBr = NULL;
     GdipCreateSolidFill(clrBG, &bgBr);
@@ -440,7 +492,7 @@ static void RenderOSD(void) {
     GpFontFamily *ffUI = NULL;
     GdipCreateFontFamilyFromName(L"Segoe UI", NULL, &ffUI);
     GpFont *fontBig = NULL;
-    GdipCreateFont(ffUI, 42.0f, 0, UnitPixel, &fontBig);
+    GdipCreateFont(ffUI, DpiF(42.0f, dpi), 0, UnitPixel, &fontBig);
 
     GpStringFormat *sf = NULL;
     GdipCreateStringFormat(0, 0, &sf);
@@ -449,14 +501,14 @@ static void RenderOSD(void) {
 
     GpSolidFill *bigBr = NULL;
     GdipCreateSolidFill(clrBig, &bigBr);
-    GpRectF rcA = {0.0f, -4.0f, (float)w, (float)h * 0.72f};
+    GpRectF rcA = {0.0f, DpiF(-4.0f, dpi), (float)w, (float)h * 0.72f};
     GdipDrawString(gfx, L"A", 1, fontBig, &rcA, sf, bigBr);
     GdipDeleteBrush(bigBr);
     GdipDeleteFont(fontBig);
 
     /* CAPS LOCK 标签 */
     GpFont *fontSmall = NULL;
-    GdipCreateFont(ffUI, 13.0f, 1, UnitPixel, &fontSmall);  /* 1 = Bold */
+    GdipCreateFont(ffUI, DpiF(13.0f, dpi), 1, UnitPixel, &fontSmall);  /* 1 = Bold */
 
     GpSolidFill *smBr = NULL;
     GdipCreateSolidFill(clrSmall, &smBr);
@@ -638,6 +690,8 @@ static LRESULT CALLBACK LLKeyboardProc(int nCode, WPARAM wp, LPARAM lp) {
 int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, LPWSTR cmdLine, int nShow) {
     (void)hPrev; (void)cmdLine; (void)nShow;
     g_hInst = hInst;
+
+    EnableDpiAwareness();
 
     HANDLE hMutex = CreateMutexW(NULL, TRUE, L"CapsBar_SingleInstance");
     if (GetLastError() == ERROR_ALREADY_EXISTS) {

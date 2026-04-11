@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(capsbar C)
 
-add_executable(capsbar WIN32 main.c)
+add_executable(capsbar WIN32 main.c resource.rc)
 target_link_libraries(capsbar shell32 user32 gdi32)
 
 # 最小体积优化

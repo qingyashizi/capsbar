@@ -1,1 +1,4 @@
 IDI_APP ICON "app.ico"
+
+/* 嵌入应用程序清单：启用视觉样式 + DPI 感知 */
+1 24 "app.manifest"
