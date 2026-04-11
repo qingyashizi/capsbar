@@ -99,7 +99,70 @@ static HBITMAP g_cacheOldBmp = NULL;
 #define IDM_THEME_AUTO  1010
 #define IDM_THEME_DARK  1011
 #define IDM_THEME_LIGHT 1012
+#define IDM_LANG_AUTO   1020
+#define IDM_LANG_ZH     1021
+#define IDM_LANG_EN     1022
 #define TIMER_FADE   1
+
+/* ══════════ 多语言支持 ══════════ */
+typedef struct {
+    const WCHAR *tip;           /* 托盘提示 */
+    const WCHAR *menuAutostart; /* 开机启动 */
+    const WCHAR *menuTheme;     /* 主题 */
+    const WCHAR *menuThemeAuto; /* 跟随系统 */
+    const WCHAR *menuThemeDark; /* 暗色模式 */
+    const WCHAR *menuThemeLight;/* 亮色模式 */
+    const WCHAR *menuLang;      /* 语言 */
+    const WCHAR *menuLangAuto;  /* 跟随系统 */
+    const WCHAR *menuLangZH;    /* 中文 */
+    const WCHAR *menuLangEN;    /* English */
+    const WCHAR *menuExit;      /* 退出 */
+} LangStrings;
+
+static const LangStrings g_langZH = {
+    L"CapsBar - \x5927\x5C0F\x5199\x6307\x793A\x5668",
+    L"\x5F00\x673A\x542F\x52A8",
+    L"\x4E3B\x9898",
+    L"\x8DDF\x968F\x7CFB\x7EDF",
+    L"\x6697\x8272\x6A21\x5F0F",
+    L"\x4EAE\x8272\x6A21\x5F0F",
+    L"\x8BED\x8A00",
+    L"\x8DDF\x968F\x7CFB\x7EDF",
+    L"\x4E2D\x6587",
+    L"English",
+    L"\x9000\x51FA CapsBar"
+};
+
+static const LangStrings g_langEN = {
+    L"CapsBar - Caps Lock Indicator",
+    L"Start with Windows",
+    L"Theme",
+    L"Follow System",
+    L"Dark Mode",
+    L"Light Mode",
+    L"Language",
+    L"Follow System",
+    L"\x4E2D\x6587",
+    L"English",
+    L"Exit CapsBar"
+};
+
+static const LangStrings *g_lang = &g_langEN;
+
+/* 语言模式：0=跟随系统, 1=强制中文, 2=强制英文 */
+static int g_langMode = 0;
+
+static void ApplyLanguage(void) {
+    if (g_langMode == 1) { g_lang = &g_langZH; return; }
+    if (g_langMode == 2) { g_lang = &g_langEN; return; }
+    LANGID lid = GetUserDefaultUILanguage();
+    WORD primary = lid & 0x3FF;
+    g_lang = (primary == LANG_CHINESE) ? &g_langZH : &g_langEN;
+}
+
+static void InitLanguage(void) {
+    ApplyLanguage();
+}
 
 /* 主题模式：0=跟随系统, 1=强制暗色, 2=强制亮色 */
 static int  g_themeMode = 0;
@@ -116,12 +179,16 @@ static void InitConfigPath(void) {
 static void LoadConfig(void) {
     g_themeMode = GetPrivateProfileIntW(L"Settings", L"ThemeMode", 0, g_iniPath);
     if (g_themeMode < 0 || g_themeMode > 2) g_themeMode = 0;
+    g_langMode = GetPrivateProfileIntW(L"Settings", L"LangMode", 0, g_iniPath);
+    if (g_langMode < 0 || g_langMode > 2) g_langMode = 0;
 }
 
 static void SaveConfig(void) {
     WCHAR val[4];
     wsprintfW(val, L"%d", g_themeMode);
     WritePrivateProfileStringW(L"Settings", L"ThemeMode", val, g_iniPath);
+    wsprintfW(val, L"%d", g_langMode);
+    WritePrivateProfileStringW(L"Settings", L"LangMode", val, g_iniPath);
 }
 
 /* ── 前向声明 ── */
@@ -266,7 +333,7 @@ static void CreateTray(HWND hwnd) {
     g_nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     g_nid.uCallbackMessage = WM_TRAYICON;
     g_nid.hIcon  = g_capsState ? g_iconOn : g_iconOff;
-    lstrcpyW(g_nid.szTip, L"CapsBar - 大小写指示器");
+    lstrcpyW(g_nid.szTip, g_lang->tip);
     Shell_NotifyIconW(NIM_ADD, &g_nid);
 }
 
@@ -431,20 +498,30 @@ static LRESULT CALLBACK OSDWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
 
             /* 开机启动 */
             AppendMenuW(hm, MF_STRING | (IsAutoStartEnabled() ? MF_CHECKED : 0),
-                        IDM_AUTOSTART, L"开机启动");
+                        IDM_AUTOSTART, g_lang->menuAutostart);
 
             /* 主题子菜单 */
             HMENU hmTheme = CreatePopupMenu();
             AppendMenuW(hmTheme, MF_STRING | (g_themeMode == 0 ? MF_CHECKED : 0),
-                        IDM_THEME_AUTO, L"跟随系统");
+                        IDM_THEME_AUTO, g_lang->menuThemeAuto);
             AppendMenuW(hmTheme, MF_STRING | (g_themeMode == 1 ? MF_CHECKED : 0),
-                        IDM_THEME_DARK, L"暗色模式");
+                        IDM_THEME_DARK, g_lang->menuThemeDark);
             AppendMenuW(hmTheme, MF_STRING | (g_themeMode == 2 ? MF_CHECKED : 0),
-                        IDM_THEME_LIGHT, L"亮色模式");
-            AppendMenuW(hm, MF_POPUP, (UINT_PTR)hmTheme, L"主题");
+                        IDM_THEME_LIGHT, g_lang->menuThemeLight);
+            AppendMenuW(hm, MF_POPUP, (UINT_PTR)hmTheme, g_lang->menuTheme);
+
+            /* 语言子菜单 */
+            HMENU hmLang = CreatePopupMenu();
+            AppendMenuW(hmLang, MF_STRING | (g_langMode == 0 ? MF_CHECKED : 0),
+                        IDM_LANG_AUTO, g_lang->menuLangAuto);
+            AppendMenuW(hmLang, MF_STRING | (g_langMode == 1 ? MF_CHECKED : 0),
+                        IDM_LANG_ZH, g_lang->menuLangZH);
+            AppendMenuW(hmLang, MF_STRING | (g_langMode == 2 ? MF_CHECKED : 0),
+                        IDM_LANG_EN, g_lang->menuLangEN);
+            AppendMenuW(hm, MF_POPUP, (UINT_PTR)hmLang, g_lang->menuLang);
 
             AppendMenuW(hm, MF_SEPARATOR, 0, NULL);
-            AppendMenuW(hm, MF_STRING, IDM_EXIT, L"退出 CapsBar");
+            AppendMenuW(hm, MF_STRING, IDM_EXIT, g_lang->menuExit);
 
             SetForegroundWindow(hwnd);
             TrackPopupMenu(hm, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hwnd, NULL);
@@ -476,6 +553,27 @@ static LRESULT CALLBACK OSDWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             g_themeMode = 2;
             g_darkMode = FALSE;
             if (g_visible) RenderOSD();
+            SaveConfig();
+            break;
+        case IDM_LANG_AUTO:
+            g_langMode = 0;
+            ApplyLanguage();
+            lstrcpyW(g_nid.szTip, g_lang->tip);
+            Shell_NotifyIconW(NIM_MODIFY, &g_nid);
+            SaveConfig();
+            break;
+        case IDM_LANG_ZH:
+            g_langMode = 1;
+            ApplyLanguage();
+            lstrcpyW(g_nid.szTip, g_lang->tip);
+            Shell_NotifyIconW(NIM_MODIFY, &g_nid);
+            SaveConfig();
+            break;
+        case IDM_LANG_EN:
+            g_langMode = 2;
+            ApplyLanguage();
+            lstrcpyW(g_nid.szTip, g_lang->tip);
+            Shell_NotifyIconW(NIM_MODIFY, &g_nid);
             SaveConfig();
             break;
         }
@@ -552,6 +650,7 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hPrev, LPWSTR cmdLine, int nShow)
 
     InitConfigPath();
     LoadConfig();
+    InitLanguage();
 
     /* 托盘图标：实心蓝色圆角矩形 + 白色 A */
     g_iconOn  = CreateTrayIcon();
