@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CapsBar 托盘图标设计</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 40px;
+    min-height: 100vh;
+  }
+  h1 { text-align: center; font-size: 28px; margin-bottom: 8px; color: #fff; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 40px; font-size: 14px; }
+
+  .designs { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
+
+  .card {
+    background: #16213e;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #1a2744;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: #34d399; }
+  .card h2 { font-size: 16px; margin-bottom: 4px; color: #fff; }
+  .card .desc { font-size: 12px; color: #888; margin-bottom: 16px; }
+
+  .preview-row {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .preview-group { text-align: center; }
+  .preview-group .label { font-size: 11px; color: #666; margin-bottom: 8px; }
+
+  .icon-sizes { display: flex; align-items: end; gap: 16px; justify-content: center; }
+
+  /* 各尺寸预览 */
+  .icon-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .icon-wrap .sz { font-size: 10px; color: #555; }
+
+  /* 模拟任务栏 */
+  .taskbar-sim {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .taskbar-sim .dot { width: 16px; height: 16px; background: #333; border-radius: 3px; }
+
+  canvas { image-rendering: pixelated; }
+
+  /* 底部对比区 */
+  .compare-section {
+    max-width: 1200px;
+    margin: 50px auto 0;
+    text-align: center;
+  }
+  .compare-section h2 { margin-bottom: 20px; color: #fff; }
+  .compare-bar {
+    background: #0d1117;
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .compare-bar .sep { width: 1px; height: 24px; background: #333; }
+  .compare-bar .tag { font-size: 10px; color: #555; position: relative; top: 12px; }
+</style>
+</head>
+<body>
+
+<h1>CapsBar 托盘图标方案</h1>
+<p class="subtitle">共 8 种设计方案，每种展示 ON（开启）和 OFF（关闭）两种状态 · 模拟 16×16 / 32×32 尺寸</p>
+
+<div class="designs" id="designs"></div>
+
+<div class="compare-section">
+  <h2>📊 全部方案 16px 对比（模拟任务栏）</h2>
+  <div class="compare-bar" id="compareBar"></div>
+</div>
+
+<script>
+// ═══ 绘制工具函数 ═══
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawText(ctx, text, x, y, font, color, align) {
+  ctx.fillStyle = color;
+  ctx.font = font;
+  ctx.textAlign = align || 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, y);
+}
+
+// ═══ 图标方案定义 ═══
+const designs = [
+  {
+    id: 'A', name: '方案 A — 描边极简（当前）',
+    desc: '透明底 + 彩色描边圆角矩形 + 彩色字母 A',
+    draw(ctx, sz, on) {
+      const clr = on ? '#34d399' : '#3b82f6';
+      const pad = sz * 0.08, r = sz * 0.22, lw = Math.max(1.5, sz * 0.06);
+      ctx.strokeStyle = clr; ctx.lineWidth = lw;
+      roundRect(ctx, pad, pad, sz - pad*2, sz - pad*2, r); ctx.stroke();
+      drawText(ctx, 'A', sz/2, sz/2, `bold ${sz*0.5}px Segoe UI`, clr);
+    }
+  },
+  {
+    id: 'B', name: '方案 B — 实心填充',
+    desc: '纯色圆角矩形填充 + 白色字母 A',
+    draw(ctx, sz, on) {
+      const bg = on ? '#34d399' : '#3b82f6';
+      const pad = sz * 0.06, r = sz * 0.22;
+      ctx.fillStyle = bg;
+      roundRect(ctx, pad, pad, sz - pad*2, sz - pad*2, r); ctx.fill();
+      drawText(ctx, 'A', sz/2, sz/2, `bold ${sz*0.5}px Segoe UI`, '#fff');
+    }
+  },
+  {
+    id: 'C', name: '方案 C — 圆形徽章',
+    desc: '纯色圆形底 + 白色字母 A，更圆润',
+    draw(ctx, sz, on) {
+      const bg = on ? '#34d399' : '#3b82f6';
+      ctx.fillStyle = bg;
+      ctx.beginPath(); ctx.arc(sz/2, sz/2, sz*0.44, 0, Math.PI*2); ctx.fill();
+      drawText(ctx, 'A', sz/2, sz/2, `bold ${sz*0.48}px Segoe UI`, '#fff');
+    }
+  },
+  {
+    id: 'D', name: '方案 D — 字母 + 圆点指示',
+    desc: '大号白色 A + 右下角彩色圆点状态指示',
+    draw(ctx, sz, on) {
+      const dotClr = on ? '#34d399' : '#64748b';
+      drawText(ctx, 'A', sz/2, sz*0.44, `bold ${sz*0.6}px Segoe UI`, '#e2e8f0');
+      // 圆点
+      const dr = sz * 0.14;
+      ctx.fillStyle = dotClr;
+      ctx.beginPath(); ctx.arc(sz*0.75, sz*0.78, dr, 0, Math.PI*2); ctx.fill();
+      // 圆点描边（暗底好辨认）
+      ctx.strokeStyle = '#0d1117'; ctx.lineWidth = Math.max(1, sz*0.04);
+      ctx.beginPath(); ctx.arc(sz*0.75, sz*0.78, dr, 0, Math.PI*2); ctx.stroke();
+    }
+  },
+  {
+    id: 'E', name: '方案 E — 上箭头符号',
+    desc: '⇧ 样式箭头 + 彩色填充，经典 Caps Lock 符号',
+    draw(ctx, sz, on) {
+      const clr = on ? '#34d399' : '#64748b';
+      const cx = sz/2, m = sz*0.12;
+      ctx.fillStyle = clr;
+      ctx.beginPath();
+      // 箭头
+      ctx.moveTo(cx, m);
+      ctx.lineTo(sz - m, sz*0.48);
+      ctx.lineTo(sz*0.65, sz*0.48);
+      ctx.lineTo(sz*0.65, sz - m);
+      ctx.lineTo(sz*0.35, sz - m);
+      ctx.lineTo(sz*0.35, sz*0.48);
+      ctx.lineTo(m, sz*0.48);
+      ctx.closePath();
+      ctx.fill();
+    }
+  },
+  {
+    id: 'F', name: '方案 F — 渐变填充',
+    desc: '渐变色圆角矩形 + 白色 A，更现代感',
+    draw(ctx, sz, on) {
+      const pad = sz*0.06, r = sz*0.22;
+      const grad = ctx.createLinearGradient(0, 0, sz, sz);
+      if (on) { grad.addColorStop(0, '#34d399'); grad.addColorStop(1, '#059669'); }
+      else    { grad.addColorStop(0, '#3b82f6'); grad.addColorStop(1, '#6366f1'); }
+      ctx.fillStyle = grad;
+      roundRect(ctx, pad, pad, sz-pad*2, sz-pad*2, r); ctx.fill();
+      drawText(ctx, 'A', sz/2, sz/2, `bold ${sz*0.5}px Segoe UI`, 'rgba(255,255,255,0.95)');
+    }
+  },
+  {
+    id: 'G', name: '方案 G — 双层描边',
+    desc: '外描边圆角 + 内部实心小方块 + A 字母',
+    draw(ctx, sz, on) {
+      const clr = on ? '#34d399' : '#3b82f6';
+      const pad = sz*0.06, r = sz*0.22, lw = Math.max(1, sz*0.05);
+      // 外描边
+      ctx.strokeStyle = clr; ctx.lineWidth = lw;
+      roundRect(ctx, pad, pad, sz-pad*2, sz-pad*2, r); ctx.stroke();
+      // 内填充（半透明）
+      ctx.fillStyle = on ? 'rgba(52,211,153,0.2)' : 'rgba(59,130,246,0.2)';
+      const inPad = sz*0.15, inR = sz*0.14;
+      roundRect(ctx, inPad, inPad, sz-inPad*2, sz-inPad*2, inR); ctx.fill();
+      drawText(ctx, 'A', sz/2, sz/2, `bold ${sz*0.45}px Segoe UI`, clr);
+    }
+  },
+  {
+    id: 'H', name: '方案 H — 极简纯字',
+    desc: '无边框，纯彩色粗体 A，最简洁',
+    draw(ctx, sz, on) {
+      const clr = on ? '#34d399' : '#94a3b8';
+      drawText(ctx, 'A', sz/2, sz/2, `bold ${sz*0.72}px Segoe UI`, clr);
+    }
+  }
+];
+
+// ═══ 渲染所有方案 ═══
+const container = document.getElementById('designs');
+const compareBar = document.getElementById('compareBar');
+
+designs.forEach((d, idx) => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<h2>${d.name}</h2><div class="desc">${d.desc}</div>`;
+
+  const row = document.createElement('div');
+  row.className = 'preview-row';
+
+  // ON 和 OFF 两组
+  ['ON（开启）', 'OFF（关闭）'].forEach((label, stateIdx) => {
+    const grp = document.createElement('div');
+    grp.className = 'preview-group';
+    grp.innerHTML = `<div class="label">${label}</div>`;
+
+    const sizes = document.createElement('div');
+    sizes.className = 'icon-sizes';
+
+    [16, 32].forEach(sz => {
+      const wrap = document.createElement('div');
+      wrap.className = 'icon-wrap';
+
+      const displaySz = sz === 16 ? 48 : 64;
+      const cvs = document.createElement('canvas');
+      cvs.width = sz; cvs.height = sz;
+      cvs.style.width = displaySz + 'px';
+      cvs.style.height = displaySz + 'px';
+      cvs.style.borderRadius = '4px';
+      cvs.style.background = '#0d1117';
+
+      const ctx = cvs.getContext('2d');
+      d.draw(ctx, sz, stateIdx === 0);
+
+      wrap.appendChild(cvs);
+      const szLabel = document.createElement('span');
+      szLabel.className = 'sz';
+      szLabel.textContent = sz + 'px';
+      wrap.appendChild(szLabel);
+      sizes.appendChild(wrap);
+    });
+
+    grp.appendChild(sizes);
+    row.appendChild(grp);
+  });
+
+  card.appendChild(row);
+
+  // 模拟任务栏
+  const tb = document.createElement('div');
+  tb.style.textAlign = 'center';
+  const tbBar = document.createElement('div');
+  tbBar.className = 'taskbar-sim';
+  const tbDot0 = document.createElement('div');
+  tbDot0.className = 'dot';
+  const tbDot1 = document.createElement('div');
+  tbDot1.className = 'dot';
+  tbBar.appendChild(tbDot0);
+  tbBar.appendChild(tbDot1);
+
+  const tbCanvas = document.createElement('canvas');
+  tbCanvas.width = 16; tbCanvas.height = 16;
+  tbCanvas.style.width = '16px'; tbCanvas.style.height = '16px';
+  d.draw(tbCanvas.getContext('2d'), 16, true);
+  tbBar.appendChild(tbCanvas);
+
+  const tbDot2 = document.createElement('div');
+  tbDot2.className = 'dot';
+  tbBar.appendChild(tbDot2);
+  tb.appendChild(tbBar);
+  const tbNote = document.createElement('div');
+  tbNote.style.cssText = 'font-size:10px;color:#555;margin-top:4px;';
+  tbNote.textContent = '↑ 模拟任务栏实际大小';
+  tb.appendChild(tbNote);
+  card.appendChild(tb);
+
+  container.appendChild(card);
+
+  // 对比栏
+  if (idx > 0) {
+    const sep = document.createElement('div');
+    sep.className = 'sep';
+    compareBar.appendChild(sep);
+  }
+  const cWrap = document.createElement('div');
+  cWrap.style.textAlign = 'center';
+  const cOn = document.createElement('canvas');
+  cOn.width = 16; cOn.height = 16;
+  cOn.style.width = '16px'; cOn.style.height = '16px';
+  d.draw(cOn.getContext('2d'), 16, true);
+  const cOff = document.createElement('canvas');
+  cOff.width = 16; cOff.height = 16;
+  cOff.style.width = '16px'; cOff.style.height = '16px';
+  d.draw(cOff.getContext('2d'), 16, false);
+  cWrap.appendChild(cOn);
+  cWrap.appendChild(document.createTextNode(' '));
+  cWrap.appendChild(cOff);
+  const cLabel = document.createElement('div');
+  cLabel.style.cssText = 'font-size:9px;color:#555;margin-top:2px;';
+  cLabel.textContent = d.id;
+  cWrap.appendChild(cLabel);
+  compareBar.appendChild(cWrap);
+});
+</script>
+</body>
+</html>

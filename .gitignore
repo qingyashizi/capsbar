@@ -1,0 +1,22 @@
+# 编译产物
+*.exe
+*.obj
+*.o
+*.pdb
+*.ilk
+*.exp
+*.lib
+
+# 构建目录
+build/
+out/
+cmake-build-*/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# 配置文件（运行时生成）
+capsbar.ini

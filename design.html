@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CapsBar 样式设计方案</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card-bg: #ffffff;
+    --card-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    --text: #1d1d1f;
+    --text-dim: #86868b;
+    --border: #e5e5e7;
+    --accent: #0071e3;
+    --section-bg: #1a1a2e;
+    --section-bg-light: #e8e8ed;
+  }
+  [data-theme="dark"] {
+    --bg: #0d0d11;
+    --card-bg: #1c1c20;
+    --card-shadow: 0 2px 24px rgba(0,0,0,0.3);
+    --text: #f5f5f7;
+    --text-dim: #86868b;
+    --border: #38383c;
+    --section-bg: #0d0d11;
+    --section-bg-light: #28282e;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 32px;
+    transition: all 0.3s;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  .header p { color: var(--text-dim); font-size: 16px; }
+
+  .theme-toggle {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    gap: 4px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    z-index: 100;
+  }
+  .theme-toggle button {
+    border: none;
+    background: transparent;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-dim);
+    transition: all 0.2s;
+  }
+  .theme-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* ── 分区 ── */
+  .section {
+    margin-bottom: 56px;
+  }
+  .section h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── OSD 预览区 ── */
+  .osd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 24px;
+  }
+  .osd-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+  }
+  .osd-card-header {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .osd-card-header h3 { font-size: 16px; font-weight: 600; }
+  .osd-card-header .tag {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--accent);
+    color: #fff;
+  }
+  .osd-preview {
+    position: relative;
+    height: 200px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 32px;
+    transition: background 0.3s;
+  }
+  .osd-preview.dark-bg { background: #1a1a2e; }
+  .osd-preview.light-bg { background: #e8eaed; }
+  .osd-desc {
+    padding: 16px 20px;
+    font-size: 13px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+  }
+
+  /* ══════════════════ 方案 A：深色简约 ══════════════════ */
+  .osd-a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(24, 24, 28, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 24px 12px 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .osd-a .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #34d058;
+    box-shadow: 0 0 8px rgba(52,208,88,0.5);
+    flex-shrink: 0;
+  }
+  .osd-a .letter {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .osd-a .label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.5px;
+  }
+
+  /* ══════════════════ 方案 B：毛玻璃 Windows 11 ══════════════════ */
+  .osd-b {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(40px) saturate(1.8);
+    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 14px 28px 14px 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  }
+  .osd-b .icon-wrap {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .osd-b .icon-wrap span {
+    font-size: 16px; font-weight: 700; color: #fff;
+  }
+  .osd-b .text-group { display: flex; flex-direction: column; gap: 1px; }
+  .osd-b .title { font-size: 13px; font-weight: 600; color: #fff; }
+  .osd-b .subtitle { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+  /* 浅色版 */
+  .osd-b-light {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(40px) saturate(1.8);
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  .osd-b-light .title { color: #1d1d1f; }
+  .osd-b-light .subtitle { color: rgba(0,0,0,0.45); }
+
+  /* ══════════════════ 方案 C：胶囊渐变 ══════════════════ */
+  .osd-c {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 28px;
+    padding: 10px 24px 10px 14px;
+    box-shadow: 0 6px 24px rgba(102,126,234,0.35);
+  }
+  .osd-c .badge {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .osd-c .label {
+    font-size: 14px; font-weight: 600; color: #fff;
+    letter-spacing: 0.3px;
+  }
+
+  /* ══════════════════ 方案 D：极简指示条 ══════════════════ */
+  .osd-d {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #18181b;
+    border-radius: 8px;
+    padding: 10px 20px;
+    border-left: 3px solid #22c55e;
+  }
+  .osd-d .letter {
+    font-size: 16px; font-weight: 700; color: #22c55e;
+    font-family: "Consolas", "JetBrains Mono", monospace;
+  }
+  .osd-d .label {
+    font-size: 13px; color: rgba(255,255,255,0.6);
+  }
+
+  .osd-d-light {
+    background: #ffffff;
+    border-left: 3px solid #16a34a;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .osd-d-light .letter { color: #16a34a; }
+  .osd-d-light .label { color: rgba(0,0,0,0.5); }
+
+  /* ══════════════════ 方案 E：macOS 风格 ══════════════════ */
+  .osd-e {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(30px);
+    border-radius: 18px;
+    padding: 20px 32px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+  .osd-e .big-letter {
+    font-size: 42px;
+    font-weight: 300;
+    color: #ffffff;
+    line-height: 1;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .osd-e .label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  /* ══════════════════ 方案 F：浮动标签 ══════════════════ */
+  .osd-f {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #0ea5e9;
+    border-radius: 10px;
+    padding: 8px 18px;
+    box-shadow: 0 4px 16px rgba(14,165,233,0.3);
+  }
+  .osd-f .lock-icon {
+    font-size: 14px; color: rgba(255,255,255,0.9);
+  }
+  .osd-f .label {
+    font-size: 14px; font-weight: 600; color: #fff;
+  }
+
+  .osd-f-alt {
+    background: #f97316;
+    box-shadow: 0 4px 16px rgba(249,115,22,0.3);
+  }
+
+  /* ══════════════════ 图标预览 ══════════════════ */
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+  .icon-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+  }
+  .icon-card h4 { font-size: 14px; margin-bottom: 16px; }
+  .icon-preview {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 12px;
+  }
+  .icon-size { text-align: center; }
+  .icon-size span { display: block; font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* 各种图标 */
+  .ico { display: inline-flex; align-items: center; justify-content: center; }
+
+  .ico-blue-grad {
+    background: linear-gradient(135deg, #3898ec, #2670c4);
+    border-radius: 22%;
+    color: #fff;
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .ico-green-pill {
+    background: linear-gradient(135deg, #34d058, #28a745);
+    border-radius: 22%;
+    color: #fff;
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .ico-dark {
+    background: linear-gradient(135deg, #2d2d32, #1a1a1e);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 22%;
+    color: #60a5fa;
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .ico-gradient {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    color: #fff;
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .ico-key {
+    background: linear-gradient(180deg, #3a3a40, #28282e);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    color: #f0f0f0;
+    font-weight: 600;
+    font-family: "Consolas", monospace;
+    box-shadow: 0 2px 0 #18181b;
+  }
+  .ico-outline {
+    background: transparent;
+    border: 2px solid #3b82f6;
+    border-radius: 22%;
+    color: #3b82f6;
+    font-weight: 700;
+    font-family: "Segoe UI", sans-serif;
+  }
+
+  .s16 { width:16px; height:16px; font-size:9px; }
+  .s32 { width:32px; height:32px; font-size:16px; }
+  .s48 { width:48px; height:48px; font-size:24px; }
+  .s64 { width:64px; height:64px; font-size:32px; }
+
+  /* ── 壁纸模拟 ── */
+  .wallpaper-dark {
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  }
+  .wallpaper-light {
+    background: linear-gradient(135deg, #c9d6ff, #e2e2e2);
+  }
+
+  /* ══════ 组合 ══════ */
+  .combo-section { margin-top: 8px; }
+  .combo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .combo-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+  }
+  .combo-preview {
+    height: 140px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 20px;
+  }
+  .combo-info {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .combo-info h4 { font-size: 14px; }
+  .combo-info .ico-small {
+    width: 28px; height: 28px; font-size: 14px;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="theme-toggle">
+  <button class="active" onclick="setTheme('light')">☀ 浅色</button>
+  <button onclick="setTheme('dark')">🌙 深色</button>
+</div>
+
+<div class="header">
+  <h1>CapsBar 样式设计</h1>
+  <p>选择你喜欢的 OSD 提示框样式和图标方案</p>
+</div>
+
+<!-- ═══════ OSD 提示框样式 ═══════ -->
+<div class="section">
+  <h2>一、OSD 提示框样式（方案 E 变体）</h2>
+  <div class="osd-grid">
+
+    <!-- E1 -->
+    <div class="osd-card">
+      <div class="osd-card-header">
+        <h3>E1 · 深灰磨砂</h3>
+      </div>
+      <div class="osd-preview wallpaper-dark">
+        <div class="osd-e" style="background:rgba(24,24,28,0.88); border:1px solid rgba(255,255,255,0.06);">
+          <span class="big-letter">A</span>
+          <span class="label">Caps Lock</span>
+        </div>
+      </div>
+      <div class="osd-desc">深灰半透明底，白色字母，微边框。沉稳内敛。</div>
+    </div>
+
+    <!-- E2 -->
+    <div class="osd-card">
+      <div class="osd-card-header">
+        <h3>E2 · 纯黑透明</h3>
+        <span class="tag">推荐</span>
+      </div>
+      <div class="osd-preview wallpaper-dark">
+        <div class="osd-e" style="background:rgba(0,0,0,0.72); border:1px solid rgba(255,255,255,0.04); box-shadow:0 8px 40px rgba(0,0,0,0.5);">
+          <span class="big-letter">A</span>
+          <span class="label">Caps Lock</span>
+        </div>
+      </div>
+      <div class="osd-desc">纯黑高透明度，极致融入暗色桌面，信息清晰但存在感低。</div>
+    </div>
+
+    <!-- E3 -->
+    <div class="osd-card">
+      <div class="osd-card-header">
+        <h3>E3 · 蓝调暗色</h3>
+      </div>
+      <div class="osd-preview wallpaper-dark">
+        <div class="osd-e" style="background:rgba(15,23,42,0.88); border:1px solid rgba(59,130,246,0.15); box-shadow:0 8px 40px rgba(15,23,42,0.5);">
+          <span class="big-letter" style="color:#93c5fd;">A</span>
+          <span class="label" style="color:rgba(147,197,253,0.5);">Caps Lock</span>
+        </div>
+      </div>
+      <div class="osd-desc">深蓝底色 + 浅蓝字母，冷色调科技感。</div>
+    </div>
+
+    <!-- E4 -->
+    <div class="osd-card">
+      <div class="osd-card-header">
+        <h3>E4 · 暖灰高级</h3>
+      </div>
+      <div class="osd-preview wallpaper-dark">
+        <div class="osd-e" style="background:rgba(38,35,32,0.90); border:1px solid rgba(255,255,255,0.05); box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+          <span class="big-letter" style="color:#fafaf9;">A</span>
+          <span class="label" style="color:rgba(250,250,249,0.4);">Caps Lock</span>
+        </div>
+      </div>
+      <div class="osd-desc">暖灰色调，类奢侈品质感。</div>
+    </div>
+
+    <!-- E5 -->
+    <div class="osd-card">
+      <div class="osd-card-header">
+        <h3>E5 · 渐变深紫</h3>
+      </div>
+      <div class="osd-preview wallpaper-dark">
+        <div class="osd-e" style="background:linear-gradient(160deg, rgba(30,20,50,0.90), rgba(20,15,35,0.90)); border:1px solid rgba(139,92,246,0.12); box-shadow:0 8px 40px rgba(30,20,50,0.5);">
+          <span class="big-letter" style="color:#c4b5fd;">A</span>
+          <span class="label" style="color:rgba(196,181,253,0.45);">Caps Lock</span>
+        </div>
+      </div>
+      <div class="osd-desc">深紫渐变背景，紫色系文字。神秘优雅。</div>
+    </div>
+
+    <!-- E6 -->
+    <div class="osd-card">
+      <div class="osd-card-header">
+        <h3>E6 · 毛玻璃白 (浅色模式)</h3>
+      </div>
+      <div class="osd-preview wallpaper-light">
+        <div class="osd-e" style="background:rgba(255,255,255,0.75); backdrop-filter:blur(40px); border:1px solid rgba(0,0,0,0.06); box-shadow:0 6px 24px rgba(0,0,0,0.08);">
+          <span class="big-letter" style="color:#1d1d1f; font-weight:400;">A</span>
+          <span class="label" style="color:rgba(0,0,0,0.35);">Caps Lock</span>
+        </div>
+      </div>
+      <div class="osd-desc">浅色模式专用：白色毛玻璃底，黑色字母。</div>
+    </div>
+
+    <!-- E7 -->
+    <div class="osd-card">
+      <div class="osd-card-header">
+        <h3>E7 · 翡翠绿光</h3>
+      </div>
+      <div class="osd-preview wallpaper-dark">
+        <div class="osd-e" style="background:rgba(10,20,18,0.88); border:1px solid rgba(52,211,153,0.12); box-shadow:0 8px 40px rgba(10,20,18,0.5);">
+          <span class="big-letter" style="color:#6ee7b7;">A</span>
+          <span class="label" style="color:rgba(110,231,183,0.4);">Caps Lock</span>
+        </div>
+      </div>
+      <div class="osd-desc">深绿底色 + 翡翠绿字母，绿色暗示"已激活"。</div>
+    </div>
+
+    <!-- E8 -->
+    <div class="osd-card">
+      <div class="osd-card-header">
+        <h3>E8 · 带指示灯版</h3>
+      </div>
+      <div class="osd-preview wallpaper-dark">
+        <div class="osd-e" style="background:rgba(0,0,0,0.72); border:1px solid rgba(255,255,255,0.04); box-shadow:0 8px 40px rgba(0,0,0,0.5); position:relative;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#34d058;box-shadow:0 0 10px rgba(52,208,88,0.6);position:absolute;top:12px;right:12px;"></div>
+          <span class="big-letter">A</span>
+          <span class="label">Caps Lock</span>
+        </div>
+      </div>
+      <div class="osd-desc">基于 E2 纯黑底 + 右上角绿色指示灯，兼具极简与状态指示。</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════ 图标方案 ═══════ -->
+<div class="section">
+  <h2>二、程序图标（已选定：描边极简）</h2>
+  <div class="icon-grid">
+    <div class="icon-card">
+      <h4>图标 6 · 描边极简 ✓</h4>
+      <div class="icon-preview">
+        <div class="icon-size"><div class="ico ico-outline s16">A</div><span>16</span></div>
+        <div class="icon-size"><div class="ico ico-outline s32">A</div><span>32</span></div>
+        <div class="icon-size"><div class="ico ico-outline s48">A</div><span>48</span></div>
+        <div class="icon-size"><div class="ico ico-outline s64">A</div><span>64</span></div>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim)">蓝色描边 + 蓝色字母，极简现代</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 推荐搭配 ═══════ -->
+<div class="section combo-section">
+  <h2>三、推荐搭配组合（E 系列 + 描边图标）</h2>
+  <div class="combo-grid">
+
+    <div class="combo-card">
+      <div class="combo-preview wallpaper-dark">
+        <div class="osd-e" style="background:rgba(24,24,28,0.88); border:1px solid rgba(255,255,255,0.06);">
+          <span class="big-letter">A</span>
+          <span class="label">Caps Lock</span>
+        </div>
+      </div>
+      <div class="combo-info">
+        <h4>E1 深灰磨砂 + 描边图标</h4>
+        <div class="ico ico-outline" style="width:28px;height:28px;font-size:14px;border-radius:22%">A</div>
+      </div>
+    </div>
+
+    <div class="combo-card">
+      <div class="combo-preview wallpaper-dark">
+        <div class="osd-e" style="background:rgba(0,0,0,0.72); border:1px solid rgba(255,255,255,0.04); box-shadow:0 8px 40px rgba(0,0,0,0.5);">
+          <span class="big-letter">A</span>
+          <span class="label">Caps Lock</span>
+        </div>
+      </div>
+      <div class="combo-info">
+        <h4>E2 纯黑透明 + 描边图标</h4>
+        <div class="ico ico-outline" style="width:28px;height:28px;font-size:14px;border-radius:22%">A</div>
+      </div>
+    </div>
+
+    <div class="combo-card">
+      <div class="combo-preview wallpaper-dark">
+        <div class="osd-e" style="background:rgba(15,23,42,0.88); border:1px solid rgba(59,130,246,0.15);">
+          <span class="big-letter" style="color:#93c5fd;">A</span>
+          <span class="label" style="color:rgba(147,197,253,0.5);">Caps Lock</span>
+        </div>
+      </div>
+      <div class="combo-info">
+        <h4>E3 蓝调暗色 + 描边图标</h4>
+        <div class="ico ico-outline" style="width:28px;height:28px;font-size:14px;border-radius:22%">A</div>
+      </div>
+    </div>
+
+    <div class="combo-card">
+      <div class="combo-preview wallpaper-dark">
+        <div class="osd-e" style="background:rgba(10,20,18,0.88); border:1px solid rgba(52,211,153,0.12);">
+          <span class="big-letter" style="color:#6ee7b7;">A</span>
+          <span class="label" style="color:rgba(110,231,183,0.4);">Caps Lock</span>
+        </div>
+      </div>
+      <div class="combo-info">
+        <h4>E7 翡翠绿光 + 描边图标</h4>
+        <div class="ico ico-outline" style="width:28px;height:28px;font-size:14px;border-radius:22%;border-color:#34d58a;color:#34d58a;">A</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.querySelectorAll('.theme-toggle button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
