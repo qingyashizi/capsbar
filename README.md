@@ -19,7 +19,7 @@
 
 ## What is CapsBar?
 
-CapsBar is a lightweight Windows tray application that displays a beautiful on-screen indicator every time you toggle Caps Lock. No more accidentally typing in the wrong case.
+CapsBar is a lightweight Windows tray application that shows a persistent on-screen indicator whenever Caps Lock is active — so you always know your current state at a glance. The indicator stays visible the entire time Caps Lock is on, and fades out as soon as you turn it off. No more accidentally typing in the wrong case.
 
 ## Screenshots
 
