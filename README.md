@@ -60,7 +60,13 @@ CapsBar is a lightweight Windows tray application that shows a persistent on-scr
 When downloading or running CapsBar for the first time, you may see a **Windows SmartScreen warning** or a browser security alert. This is expected behavior and not a sign of malware.
 
 **Why does this happen?**  
-CapsBar is signed with a valid [Certum](https://www.certum.eu/) code signing certificate (you can verify the publisher name *Fangmeng Liu*). However, Microsoft SmartScreen assigns trust based on a program's download reputation — new software with few downloads has not yet accumulated enough reputation, regardless of its certificate status. The warning will diminish as more users download and run the app.
+CapsBar is signed with a valid [Certum](https://www.certum.eu/) code signing certificate (you can verify the publisher name *Fangmeng Liu*). However, Microsoft SmartScreen assigns trust based on a program's download reputation — new software with few downloads has not yet accumulated enough reputation, regardless of its certificate status.
+
+Note that there are **two independent reputation systems**:
+- **Browser warning** (Chrome / Edge download block) — based on the download URL and file hash; tends to persist longer.
+- **Windows SmartScreen popup** (the blue "Windows protected your PC" dialog) — based purely on the file hash across all users globally; clears sooner once enough people have run the file.
+
+You may find that the Windows popup disappears after just a handful of downloads, while the browser still shows a warning for longer. Both will go away as the app gains more users.
 
 **The entire source code (~660 lines of C) is available in this repository.** You are welcome to read it, build it yourself, or audit it before running the binary.
 
