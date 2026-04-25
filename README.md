@@ -58,6 +58,27 @@ CapsBar is a lightweight Windows tray application that displays a beautiful on-s
 
 > No installation wizard needed. To uninstall, disable auto-start from the tray menu and delete the file.
 
+### SmartScreen Warning
+
+When downloading or running CapsBar for the first time, you may see a **Windows SmartScreen warning** or a browser security alert. This is expected behavior and not a sign of malware.
+
+**Why does this happen?**  
+CapsBar is signed with a valid [Certum](https://www.certum.eu/) code signing certificate (you can verify the publisher name *Fangmeng Liu*). However, Microsoft SmartScreen assigns trust based on a program's download reputation — new software with few downloads has not yet accumulated enough reputation, regardless of its certificate status. The warning will diminish as more users download and run the app.
+
+**How to proceed past the warning:**
+
+- **Browser download warning** — Click **Keep** (Chrome) or **Keep anyway** (Edge) when prompted.
+- **SmartScreen popup** (blue "Windows protected your PC" dialog) — Click **More info**, then **Run anyway**.
+
+You can independently verify the binary's integrity:
+1. Right-click `capsbar.exe` → **Properties** → **Digital Signatures** tab
+2. The signature should show **Fangmeng Liu** issued by **Certum Code Signing 2021 CA**
+3. Or run in PowerShell:
+   ```powershell
+   Get-AuthenticodeSignature "capsbar.exe" | Select-Object Status, SignerCertificate
+   ```
+   Expected output: `Status: Valid`
+
 ### Configuration
 
 Settings are saved automatically to `capsbar.ini` in the same folder as the executable.
@@ -130,6 +151,28 @@ CapsBar 是一个轻量级 Windows 托盘程序，每当你切换大写锁定键
 4. 右键托盘图标 → **开机启动** 即可设置自动启动
 
 > 无需安装向导。卸载时，在托盘菜单中关闭"开机启动"，然后删除文件即可。
+
+### SmartScreen 安全警告说明
+
+首次下载或运行 CapsBar 时，浏览器或 Windows 可能会弹出**安全警告**，这属于正常现象，并不代表软件存在风险。
+
+**为什么会有这个警告？**  
+CapsBar 已使用有效的 [Certum](https://www.certum.eu/) 代码签名证书进行签名（可验证发布者为 *Fangmeng Liu*）。但 Microsoft SmartScreen 的信任机制基于程序的**下载量和用户接受记录**来建立——新发布的软件即使持有有效证书，也需要一定时间积累信誉值，这一阶段的警告会随着下载量增加而逐渐消失。
+
+**如何跳过警告运行程序：**
+
+- **浏览器下载警告** — Chrome 点击 **保留**，Edge 点击 **保留** 或 **仍然保留**。
+- **SmartScreen 弹窗**（蓝色"Windows 已保护你的电脑"对话框）— 点击 **更多信息**，再点击 **仍要运行**。
+
+**如何独立验证签名真实性：**
+
+1. 右键 `capsbar.exe` → **属性** → **数字签名** 选项卡
+2. 签名者应显示 **Fangmeng Liu**，颁发机构为 **Certum Code Signing 2021 CA**
+3. 或在 PowerShell 中运行：
+   ```powershell
+   Get-AuthenticodeSignature "capsbar.exe" | Select-Object Status, SignerCertificate
+   ```
+   预期输出：`Status: Valid`
 
 ### 配置文件
 
