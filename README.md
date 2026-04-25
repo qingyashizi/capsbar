@@ -29,8 +29,8 @@ CapsBar is a lightweight Windows tray application that displays a beautiful on-s
 
 ## Features
 
-- **OSD Notification** — A smooth rounded popup appears at the bottom of your screen whenever Caps Lock state changes
-- **Fade Animation** — The indicator fades in and out naturally, without interrupting your workflow
+- **OSD Notification** — A rounded popup appears at the bottom of your screen. It **stays visible while Caps Lock is ON** and fades out when you turn it off
+- **Fade Animation** — The indicator fades out naturally when Caps Lock is turned off, without interrupting your workflow
 - **Dark / Light Theme** — Follows your Windows system theme automatically, or set it manually via the tray menu
 - **Bilingual** — Supports Chinese and English; auto-detects your system language or let you choose manually
 - **DPI Aware** — Full Per-Monitor V2 DPI support; looks crisp on any resolution or scaling factor
