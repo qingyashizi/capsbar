@@ -65,6 +65,8 @@ When downloading or running CapsBar for the first time, you may see a **Windows 
 **Why does this happen?**  
 CapsBar is signed with a valid [Certum](https://www.certum.eu/) code signing certificate (you can verify the publisher name *Fangmeng Liu*). However, Microsoft SmartScreen assigns trust based on a program's download reputation — new software with few downloads has not yet accumulated enough reputation, regardless of its certificate status. The warning will diminish as more users download and run the app.
 
+**The entire source code (~660 lines of C) is available in this repository.** You are welcome to read it, build it yourself, or audit it before running the binary.
+
 **How to proceed past the warning:**
 
 - **Browser download warning** — Click **Keep** (Chrome) or **Keep anyway** (Edge) when prompted.
@@ -158,6 +160,8 @@ CapsBar 是一个轻量级 Windows 托盘程序，每当你切换大写锁定键
 
 **为什么会有这个警告？**  
 CapsBar 已使用有效的 [Certum](https://www.certum.eu/) 代码签名证书进行签名（可验证发布者为 *Fangmeng Liu*）。但 Microsoft SmartScreen 的信任机制基于程序的**下载量和用户接受记录**来建立——新发布的软件即使持有有效证书，也需要一定时间积累信誉值，这一阶段的警告会随着下载量增加而逐渐消失。
+
+**本软件全部源代码（约 660 行 C 语言）均已在此仓库开放**，你可以自行审阅代码、从源码编译，或在运行前进行任意方式的安全验证。
 
 **如何跳过警告运行程序：**
 
